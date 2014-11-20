@@ -30,7 +30,16 @@ using namespace std;
 class Evader
 {
  private:
+  void cohesion(Boid *boidI, int index);
+  void avoidance(Boid* boidI, int index);
+  void alignment(Boid* boidI, int index);
+  void flocking2();
+  void boundPosition(Boid *b);
+
+  float maxSpeed;
+
   vec3 position;
+  vec3 lookAtPoint;
   
   char *modelPath;
   char *imagePath;
@@ -39,7 +48,7 @@ class Evader
   Model* model;
   std::vector<Boid> evaderVector; // Change to pointers?
 
-  int maxDistance, minDistance;
+  float maxDistance, minDistance;
   float cohesionWeight, avoidanceWeight, alignmentWeight;
 
  public:

@@ -20,15 +20,16 @@ Evader::Evader(GLuint *phongShader, char * mdlPath, char *imgPath)
 
   model = LoadModelPlus(modelPath);
 
-  maxDistance = 100;
-  minDistance = 10;
+  maxDistance = 100.0;
+  minDistance = 15.0;
 
-  cohesionWeight = 0.001;
-  avoidanceWeight = 0.5;
-  alignmentWeight = 0.0001;
-  
-  //makeFlockOf(20);
-  //evaderVector.assign(10, Boid(position));
+  maxSpeed = Norm(vec3(2,2,2));
+
+  cohesionWeight = 0.002; //0.01
+  avoidanceWeight = 0.02; //0.2
+  alignmentWeight = 0.001; //0.0001;
+
+  lookAtPoint = position + vec3(100,0,100);
 }
 
 /*Evader::~Evader()
@@ -60,17 +61,135 @@ void Evader::draw(mat4 cameraMatrix)
 
 void Evader::update(GLfloat time)
 {
-  flocking();
-  int numberOfEvaders = evaderVector.size();
+  flocking2();
+}
 
-  for(int i = 0; i < numberOfEvaders; i++)
+void Evader::boundPosition(Boid *b)
+{
+  float xMin = 0.0;
+  float xMax = 512.0;
+  float yMin = 10.0;
+  float yMax = 250.0;
+  float zMin = 0.0;
+  float zMax = 512.0;
+
+  if(b->position.x < xMin)
+    b->speed.x += 0.3;
+  else if(b->position.x > xMax)
+    b->speed.x -= 0.2;
+
+  else if(b->position.y < yMin)
+    b->speed.y += 0.2;
+  else if(b->position.y > yMax)
+    b->speed.y -= 0.2;
+
+  else if(b->position.z < zMin)
+    b->speed.z += 0.2;
+  else if(b->position.z > zMax)
+    b->speed.z -= 0.2;
+}
+
+void Evader::flocking2()
+{
+  int N = evaderVector.size();
+
+  for(int i = 0; i < N; i++)
     {
-      //if(Norm(evaderVector.at(i).position - position) < 400)
-	evaderVector.at(i).position += evaderVector.at(i).speed;
-	//else
-	//evaderVector.at(i).position -= evaderVector.at(i).speed;
+      //evaderVector.at(i).speed = vec3(0,0,0);
+      cohesion(&evaderVector.at(i), i);
+      avoidance(&evaderVector.at(i), i);
+      alignment(&evaderVector.at(i), i);
+
+      evaderVector.at(i).speed += evaderVector.at(i).cohesionVector*cohesionWeight +
+	evaderVector.at(i).avoidanceVector*avoidanceWeight +
+	evaderVector.at(i).alignmentVector*alignmentWeight;
+
+      if(Norm(evaderVector.at(i).speed) > maxSpeed)
+	evaderVector.at(i).speed /= 2.0;
+
+      evaderVector.at(i).position += evaderVector.at(i).speed;
+      boundPosition(&evaderVector.at(i));
+
+      cout << "Position for boid i: (" << evaderVector.at(i).position.x << "," << evaderVector.at(i).position.y << "," << evaderVector.at(i).position.z << ")" << endl;
     }
 }
+
+void Evader::cohesion(Boid *boidI, int index)
+{
+  boidI->cohesionVector = vec3(0,0,0);
+  boidI->averagePosition = vec3(0,0,0);
+  int N = evaderVector.size();
+  uint count = 0;
+
+  for(int j = 0; j < N; j++)
+    {
+      Boid boidJ = evaderVector.at(j);
+      if(index != j)
+	{
+	  float distance = Norm(boidJ.position - boidI->position);
+	  if(distance < maxDistance)
+	    {
+	      boidI->averagePosition += boidJ.position;
+	      count++;
+	    }
+	}
+    }
+  if(count > 0)
+    boidI->averagePosition /= (float)count;
+
+  float dist = Norm(boidI->averagePosition - boidI->position);
+  boidI->cohesionVector = Normalize(boidI->averagePosition - boidI->position)*dist;
+}
+
+void Evader::avoidance(Boid* boidI, int index)
+{
+  boidI->avoidanceVector = vec3(0,0,0);
+  int N = evaderVector.size();
+  uint count = 0;
+
+  for(int j = 0; j < N; j++)
+    {
+      Boid boidJ = evaderVector.at(j);
+      if(index != j)
+	{
+	  vec3 distanceVector = boidJ.position - boidI->position;
+	  float distance = Norm(distanceVector);
+	  if(distance < minDistance)
+	    {
+	      //float fx = exp(1.0/distance) - 1.0;
+	      boidI->avoidanceVector -= distanceVector/distance;
+	      count++;
+	    }
+	}
+    }
+  if(count > 0)
+    boidI->avoidanceVector /= (float)count;
+}
+
+void Evader::alignment(Boid* boidI, int index)
+{
+  boidI->alignmentVector = vec3(0,0,0);
+  boidI->speedDifference = vec3(0,0,0);
+  int N = evaderVector.size();
+  uint count = 0;
+
+  for(int j = 0; j < N; j++)
+    {
+      Boid boidJ = evaderVector.at(j);
+      if(index != j)
+	{
+	  float distance = Norm(boidJ.position - boidI->position);
+	  if(distance < maxDistance)
+	    {
+	      boidI->speedDifference += (boidJ.speed - boidI->speed);
+	      count++;
+	    }
+	}
+    }
+  if(count > 0)
+    boidI->alignmentVector = boidI->speedDifference/(float)count;
+}
+
 
 void Evader::flocking()
 {
@@ -88,7 +207,7 @@ void Evader::flocking()
 	{
 	  if(i != j)
 	    {
-	      if(Norm(evaderVector.at(j).position - evaderVector.at(i).position) < maxDistance) // - instead of VectorSub, overloaded operation in C++
+	      if(Norm(evaderVector.at(j).position - evaderVector.at(i).position) < maxDistance)
 		{
 		  // Alignment:
 		  evaderVector.at(i).speedDifference += (evaderVector.at(j).speed - evaderVector.at(i).speed);
@@ -123,13 +242,6 @@ void Evader::flocking()
 	evaderVector.at(i).speedDifference*alignmentWeight 
 	+ averageDifference*cohesionWeight 
 	+ evaderVector.at(i).avoidanceVector*avoidanceWeight;
-
-      //evaderVector.at(i).speed = Normalize(evaderVector.at(i).speed);
-      
-      //evaderVector.at(i).position += evaderVector.at(i).speed; // Done in update!
-
-      cout << "Speed for current boid: (" << evaderVector.at(i).speed.x << ","
-	   << evaderVector.at(i).speed.y << "," << evaderVector.at(i).speed.z << ")" << endl;
     }
 
   // bool attacked = false;
@@ -141,15 +253,26 @@ void Evader::flocking()
   // int min = 0;
   // int randNum = rand()%(max-min + 1) + min;
 
+  int max = evaderVector.size()-1;
+  int min = 0;
+
+  //int randNum = rand()%(max-min + 1) + min;
+
   // Adding noise to one of the boids
-  float divide = 3000;
+  float divide = 100;
   float xOffset = (float)((random() % 2000) - 1000);
   float yOffset = (float)((random() % 2000) - 1000);
   float zOffset = (float)((random() % 2000) - 1000);
 
+  //cout << "xOffset = " << xOffset << endl;
+
   vec3 offsetVec = vec3(xOffset, yOffset, zOffset);
   int randNum = 0;
-  evaderVector.at(randNum).speed += offsetVec/divide;
+  evaderVector.at(randNum).speed += offsetVec/divide; // Leader
+
+  //lookAtPoint += offsetVec/divide;
+
+  //position += offsetVec/divide;
   
 }
 
@@ -169,10 +292,10 @@ void Evader::makeFlockOf(int inhabitants)
 vec3 Evader::calculateAvoidance(vec3 posJ, vec3 posI)
 {
   vec3 avoidVec = vec3(0.0, 0.0, 0.0);
-  vec3 differenceVec = posJ - posI;
+  vec3 differenceVec = posI - posJ; // posJ - posI ?
   float distance = Norm(differenceVec);
   
-  if(distance > minDistance)
+  if(distance < minDistance) // > ?
     {
       float constant = 1.0;
       float fx = exp(constant/distance) - 1.0;

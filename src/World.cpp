@@ -32,7 +32,7 @@ void World::init(){
   int s = (int)(sizeof(evaders));
   cout << "Size of class evader: " << s << endl;
 
-  evaders->makeFlockOf(100);
+  evaders->makeFlockOf(200);
 
   s = (int)(sizeof(Evader));
   cout << "Size of class evader: " << s << endl;
