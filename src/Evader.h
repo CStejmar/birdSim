@@ -24,22 +24,26 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <random>
 
 using namespace std;
 
 class Evader
 {
  private:
+  void flocking();
   void cohesion(Boid *boidI, int index);
   void avoidance(Boid* boidI, int index);
   void alignment(Boid* boidI, int index);
-  void flocking2();
-  void boundPosition(Boid *b);
-
-  float maxSpeed;
+  void followLeader(Boid* boidI);
+  void boundPositionBoid(Boid *b);
+  void boundPositionFlock();
 
   vec3 position;
   vec3 lookAtPoint;
+  vec3 follow;
+
+  //Boid leader;
   
   char *modelPath;
   char *imagePath;
@@ -48,17 +52,24 @@ class Evader
   Model* model;
   std::vector<Boid> evaderVector; // Change to pointers?
 
-  float maxDistance, minDistance;
+  float maxDistance, minDistance, maxSpeed;
   float cohesionWeight, avoidanceWeight, alignmentWeight;
 
+  float xMin;
+  float xMax;
+  float yMin;
+  float yMax;
+  float zMin;
+  float zMax;
+
+  float iLow,iHigh;
+
  public:
-  Evader(GLuint *phongShader, char * modelPath, char *imagePath);
+  Evader(GLuint *phongShader, char * modelPath, char *imagePath, vec3 pos);
   void draw(mat4 cameraMatrix);
   //void animate(GLfloat time);
   void update(GLfloat time);
-  void flocking();
   void makeFlockOf(int inhabitants);
-  vec3 calculateAvoidance(vec3 posi, vec3 posj);
   
 };
 

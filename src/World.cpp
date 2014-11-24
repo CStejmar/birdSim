@@ -14,9 +14,9 @@ void World::init(){
   t = 0;
   // Init objects
   patchGenerator = new MockupPatchGenerator("../textures/fft-terrain.tga");
-  camera = new Camera(vec3(24,20,24), 1, 7);
+  camera = new Camera(vec3(24,20,24), 3, 7);
   skybox = new Skybox(&skyboxShader, camera->projectionMatrix, "../textures/skybox/skybox2/sky%d.tga");
-  evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga");
+  evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25));
 
   // Init light
   glUseProgram(phongShader);

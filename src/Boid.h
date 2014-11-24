@@ -38,6 +38,9 @@ class Boid
   vec3 cohesionVector;
   vec3 alignmentVector;
 
+  vec3 forward;
+  vec3 up;
+
   vec3 lookAtPoint;
   vec3 direction;
 
@@ -47,7 +50,7 @@ class Boid
   void draw(mat4 cameraMatrix, GLuint* shader, Model* model, GLuint* texture);
   void animate(GLfloat time);
   void setDirection();
-  void setRotation();
+  void setRotation(vec3 leaderPos);
   
 };
 
