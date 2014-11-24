@@ -1,9 +1,9 @@
 
 #include "Boid.h"
-
-Boid::Boid(vec3 pos)
+Boid::Boid()
 {
-  position = vec3(pos.x, pos.y, pos.z);
+  //Construtor for leader. Maybe make a class of it because it does not need all that a boid needs
+  position = vec3(0,0,0);
   averagePosition = vec3(0.0, 0.0, 0.0);
   
   speed = vec3(1.0, 0.2, 0.8);
@@ -13,46 +13,58 @@ Boid::Boid(vec3 pos)
   cohesionVector = vec3(0.0, 0.0, 0.0);
   alignmentVector = vec3(0.0, 0.0, 0.0);
 
-  lookAtPoint = vec3(60.0,60.0,60.0);
-  direction = VectorSub(position,lookAtPoint); //?
-
-  forward = vec3(0,0,1);
+  forward = vec3(0,0,1); //Or vec3(0,0,-1)?;
   up = vec3(0,1,0);
 
   rotationMatrix = IdentityMatrix();
 }
 
-void Boid::setDirection()
+Boid::Boid(vec3 pos)
 {
+  position = pos;
+  averagePosition = vec3(0.0, 0.0, 0.0);
+  
+  speed = vec3(1.0, 0.2, 0.8);
+  speedDifference = vec3(0.0, 0.0, 0.0);
+  
+  avoidanceVector = vec3(0.0, 0.0, 0.0);
+  cohesionVector = vec3(0.0, 0.0, 0.0);
+  alignmentVector = vec3(0.0, 0.0, 0.0);
 
-  //vec3 p = vec3(averagePosition.x*50, averagePosition.y, averagePosition.z*50);
-  //direction = position - averagePosition;
+  forward = vec3(0,0,1); //Or vec3(0,0,-1)?;
+  up = vec3(0,1,0);
+  //side = vec3(1,0,0);, needed?
 
+  rotationMatrix = IdentityMatrix();
 }
 
-void Boid::setRotation(vec3 leaderPos)
+// void Boid::setDirection()
+// {
+
+//   //vec3 p = vec3(averagePosition.x*50, averagePosition.y, averagePosition.z*50);
+//   //direction = position - averagePosition;
+
+// }
+
+// If the birds are flying side by side it looks weird if all of them looks att the same point
+void Boid::setRotation()
 {
-  float degrees = 10.0;
-  vec3 v = forward; //(position - forward);
-  vec3 v2 = vec3(direction.x, 0.0, direction.z);
-  direction = Normalize(direction);
-  std::cout << "Direction for boid i: (" << direction.x << "," << direction.y << "," << direction.z << ")" << std::endl;
+  // vec3 vn,vp;
+  //splitVector(direction,up,&vn,&vp);
+
+  vec3 v = forward;
+  vec3 v2 = Normalize(direction); //Normalize(vec3(direction.x, 0.0, direction.z));
+
+  //std::cout << "Direction for boid i: (" << direction.x << "," << direction.y << "," << direction.z << ")" << std::endl;
   
-  float theta = acos(DotProduct(v2,v)/(Norm(v2)*Norm(v)));
+  //float theta = acos(DotProduct(v2,v)/(Norm(v2)*Norm(v)));
+  float theta = 3.14 - atan2((v2.x-v.x),(v2.z-v.z));
   //std::cout << "Theta = " << theta << std::endl;
 
-  // if(direction.x > 0 && direction.y > 0 && direction.z > 0)
-  //   degrees += 10.0;
-  // else
-  //   degrees -= 10.0;
-  
-  // mat4 xRot = Rx(degrees);
-  // mat4 yRot = Ry(degrees);
-
-  //rotationMatrix = Ry(theta);
+  rotationMatrix = Ry(theta);
 
   forward = direction;
-  rotationMatrix = ArbRotate(direction, theta); //Mult(yRot,xRot);
+  //rotationMatrix = ArbRotate(direction, theta); //Mult(yRot,xRot);
 
 }
 

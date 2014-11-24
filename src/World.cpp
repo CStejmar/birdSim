@@ -16,7 +16,7 @@ void World::init(){
   patchGenerator = new MockupPatchGenerator("../textures/fft-terrain.tga");
   camera = new Camera(vec3(24,20,24), 3, 7);
   skybox = new Skybox(&skyboxShader, camera->projectionMatrix, "../textures/skybox/skybox2/sky%d.tga");
-  evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25));
+  evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 200);
 
   // Init light
   glUseProgram(phongShader);
@@ -32,7 +32,8 @@ void World::init(){
   int s = (int)(sizeof(evaders));
   cout << "Size of class evader: " << s << endl;
 
-  evaders->makeFlockOf(200);
+  //evaders->makeFlockOf(10, vec3(-200,30,-200)); // Why does these birds reunite with the other flock
+                                                  // even if they are far away? Check their contribution vectors for speed.
 
   s = (int)(sizeof(Evader));
   cout << "Size of class evader: " << s << endl;
@@ -82,9 +83,10 @@ void World::draw(){
   
   //for_each(terrainVector.begin(), terrainVector.end(), drawTerrainVector);
   //printf("size of vector = %i\n", terrainVector.size());
-  for(int i = 0; i < terrainVector.size(); i++){
+  
+  /*for(int i = 0; i < terrainVector.size(); i++){
     terrainVector.at(i)->draw(camera->cameraMatrix);
-  }
+    }*/
 
   //bird->animate(t);
   evaders->draw(camera->cameraMatrix);

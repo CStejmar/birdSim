@@ -3,7 +3,7 @@
 
 Camera::Camera(vec3 pos, GLfloat vel, GLfloat sens)
 {
-  vec3 r = vec3(60,0,60);
+  vec3 r = vec3(50,0,50);
   position = pos;
   lookAtPoint = VectorAdd(position,r);
   upVector = vec3(0,1,0);

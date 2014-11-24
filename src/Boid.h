@@ -33,24 +33,21 @@ class Boid
 
   vec3 position, averagePosition;
   vec3 speed, speedDifference;
-
   vec3 avoidanceVector;
   vec3 cohesionVector;
   vec3 alignmentVector;
-
   vec3 forward;
   vec3 up;
-
-  vec3 lookAtPoint;
   vec3 direction;
 
   mat4 rotationMatrix;
 
+  Boid();
   Boid(vec3 pos);
   void draw(mat4 cameraMatrix, GLuint* shader, Model* model, GLuint* texture);
   void animate(GLfloat time);
-  void setDirection();
-  void setRotation(vec3 leaderPos);
+  //void setDirection();
+  void setRotation();
   
 };
 
