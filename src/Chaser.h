@@ -1,5 +1,5 @@
-#ifndef _EVADER_
-#define _EVADER_
+#ifndef _CHASER_
+#define _CHASER_
 
 #ifdef __APPLE__
 	#include <OpenGL/gl3.h>
@@ -28,20 +28,18 @@
 
 using namespace std;
 
-class Evader
+class Chaser
 {
  private:
-  void flocking(vector<Boid> chaserVector);
-  void cohesion(Boid *boidI, int index);
+  void searchPrey(vector<Boid> evaderVector);
+  
   void avoidance(Boid* boidI, int index);
-  void alignment(Boid* boidI, int index);
-  void avoidChaser(Boid* boidI, vector<Boid> chaserVector);
-  void followLeader(Boid* boidI);
+  void attack(Boid* boidI, vector<Boid> evaders);
   void boundPositionBoid(Boid *boid);
   void checkMaxSpeed(Boid *boid);
-  void updateLeader();
+  void setRandomSpeed(Boid *boidI);
 
-  vec3 follow, avoidChaserVector;
+  vec3 attackVector;
   
   char *modelPath;
   char *imagePath;
@@ -49,10 +47,13 @@ class Evader
   GLuint texture;
   Model* model;
   
-  //vec3 maxSpeed;
-  float maxDistance, minDistance, maxSpeed, awarenessRadius;
-  float cohesionWeight, avoidanceWeight, alignmentWeight, followWeight, avoidChaserWeight;
+  float awarenessRadius, minDistance, maxSpeed;
+  float avoidanceWeight, attackWeight;
 
+  float lowInterval;
+  float highInterval;
+
+  // Bounding box
   float xMin;
   float xMax;
   float yMin;
@@ -61,14 +62,13 @@ class Evader
   float zMax;
 
  public:
-  Boid leader;
-  std::vector<Boid> evaderVector; // Change to pointers?
+  std::vector<Boid> chaserVector; // Change to pointers?
 
-  Evader(GLuint *phongShader, char * modelPath, char *imagePath, vec3 pos, int numOfBoids);
+  Chaser(GLuint *phongShader, char * modelPath, char *imagePath, vec3 pos, int numOfBoids);
   void draw(mat4 cameraMatrix);
   //void animate(GLfloat time);
-  void update(GLfloat time, vector<Boid> chaserVector);
-  void makeFlockOf(int inhabitants, vec3 position);
+  void update(GLfloat time, vector<Boid> evaderVector);
+  void makeIndividuals(int inhabitants, vec3 position);
   
 };
 

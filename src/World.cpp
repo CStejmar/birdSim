@@ -16,7 +16,10 @@ void World::init(){
   patchGenerator = new MockupPatchGenerator("../textures/fft-terrain.tga");
   camera = new Camera(vec3(24,20,24), 3, 7);
   skybox = new Skybox(&skyboxShader, camera->projectionMatrix, "../textures/skybox/skybox2/sky%d.tga");
-  evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 200);
+
+  birds = new ManageChasersAndEvaders(&phongObjShader);
+  //evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 150);
+  //chasers = new Chaser(&phongObjShader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
 
   // Init light
   glUseProgram(phongShader);
@@ -28,15 +31,15 @@ void World::init(){
   
   glUniformMatrix4fv(glGetUniformLocation(phongShader, "projMatrix"), 1, GL_TRUE, camera->projectionMatrix.m);
 
-  // Boid
-  int s = (int)(sizeof(evaders));
-  cout << "Size of class evader: " << s << endl;
+  // // Boid
+  // int s = (int)(sizeof(evaders));
+  // cout << "Size of class evader: " << s << endl;
 
-  //evaders->makeFlockOf(10, vec3(-200,30,-200)); // Why does these birds reunite with the other flock
-                                                  // even if they are far away? Check their contribution vectors for speed.
+  // //evaders->makeFlockOf(10, vec3(-200,30,-200)); // Why does these birds reunite with the other flock
+  //                                                 // even if they are far away? Check their contribution vectors for speed.
 
-  s = (int)(sizeof(Evader));
-  cout << "Size of class evader: " << s << endl;
+  // s = (int)(sizeof(Evader));
+  // cout << "Size of class evader: " << s << endl;
 
   glUseProgram(phongObjShader);
   
@@ -75,7 +78,10 @@ void World::drawTerrainVector(TerrainPatch* t){
 void World::draw(){
   t = (GLfloat)glutGet(GLUT_ELAPSED_TIME) / 3000;
   camera->update();
-  evaders->update(t);
+
+  birds->update(t);
+  //evaders->update(t,chasers->chaserVector);
+  //chasers->update(t,evaders->evaderVector);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -88,15 +94,18 @@ void World::draw(){
     terrainVector.at(i)->draw(camera->cameraMatrix);
     }*/
 
-  //bird->animate(t);
-  evaders->draw(camera->cameraMatrix);
+  birds->draw(camera->cameraMatrix);
+  //evaders->draw(camera->cameraMatrix);
+  //chasers->draw(camera->cameraMatrix);
 }
 
 
 World::~World(){
   delete camera;
   delete skybox;
-  delete evaders;
+  delete birds;
+  //delete evaders;
+  //delete chasers;
   terrainVector.clear();
   delete patchGenerator;
 }

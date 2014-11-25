@@ -13,7 +13,7 @@ Boid::Boid()
   cohesionVector = vec3(0.0, 0.0, 0.0);
   alignmentVector = vec3(0.0, 0.0, 0.0);
 
-  forward = vec3(0,0,1); //Or vec3(0,0,-1)?;
+  forward = vec3(0,0,-1); //Or vec3(0,0,1)?; According to blender: -1 in z
   up = vec3(0,1,0);
 
   rotationMatrix = IdentityMatrix();
@@ -31,7 +31,7 @@ Boid::Boid(vec3 pos)
   cohesionVector = vec3(0.0, 0.0, 0.0);
   alignmentVector = vec3(0.0, 0.0, 0.0);
 
-  forward = vec3(0,0,1); //Or vec3(0,0,-1)?;
+  forward = vec3(0,0,-1); //Or vec3(0,0,1)?;
   up = vec3(0,1,0);
   //side = vec3(1,0,0);, needed?
 

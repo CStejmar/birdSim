@@ -19,7 +19,10 @@
 #include "MockupPatchGenerator.h"
 #include "Skybox.h"
 #include "TerrainPatch.h"
-#include "Evader.h"
+
+#include "ManageChasersAndEvaders.h"
+//#include "Evader.h"
+//#include "Chaser.h"
 
 #include <vector>
 #include <algorithm>
@@ -42,7 +45,10 @@ class World
     GLuint skyboxShader;
     Camera* camera;
     Skybox* skybox;
-    Evader* evaders;
+
+ManageChasersAndEvaders* birds;
+    //Evader* evaders;
+    //Chaser* chasers;
     PatchGenerator* patchGenerator;
     std::vector<TerrainPatch*> terrainVector;
 

@@ -18,25 +18,27 @@ Evader::Evader(GLuint *phongShader, char * mdlPath, char *imgPath, vec3 pos, int
 
   maxDistance = 20.0;
   minDistance = 5.0;
+  awarenessRadius = 40;
 
   //maxSpeed = vec3(1,1,1);
-  maxSpeed = Norm(vec3(2,2,2));
+  maxSpeed = Norm(vec3(1.4,1.4,1.4));
 
   cohesionWeight = 0.002; //0.01
   avoidanceWeight = 0.04; //0.02, 0.2
   alignmentWeight = 0.001; //0.0001;
   followWeight = 0.002; //0.004;
+  avoidChaserWeight = 0.4;
 
   // Bounding the positions inside this cube. Should maybe center around camera position instead.
   xMin = 0.0;
-  xMax = 512.0; //512.0;
+  xMax = 512.0;
   yMin = 20.0;
   yMax = 300.0;
   zMin = 0.0;
   zMax = 512.0;
   
   makeFlockOf(numOfBoids, pos);
-  leader.position = pos + vec3(50,0,50); //Makes the leader start ahead of the flock (for following and rotation).
+  leader.position = pos + vec3(50,0,50); //vec3(75,0,75); //Makes the leader start ahead of the flock (for following and rotation).
   //leader.speed = vec3(1,0,1);
 }
 
@@ -53,7 +55,7 @@ void Evader::draw(mat4 cameraMatrix)
       evaderVector.at(i).draw(cameraMatrix, shader, model, &texture);
     }
 
-  leader.draw(cameraMatrix, shader, model, &texture);
+  //leader.draw(cameraMatrix, shader, model, &texture);
 }
 
 // void Evader::animate(GLfloat time)
@@ -104,28 +106,34 @@ void Evader::checkMaxSpeed(Boid *boid)
   vec3 mSpeed = vec3(1,1,1);
 if(Norm(boid->speed) > Norm(mSpeed))
     {
-      if(boid->speed.x < 0)
-	boid->speed.x = -1*mSpeed.x;
-      if(boid->speed.x > 0)
-	boid->speed.x = mSpeed.x;
+      boid->speed = (boid->speed/Norm(boid->speed))*Norm(mSpeed);
 
-      if(boid->speed.y < 0)
-	boid->speed.y = -1*mSpeed.y;
-      if(boid->speed.y > 0)
-	boid->speed.y = mSpeed.y;
+      // if(boid->speed.x < 0)
+      // 	boid->speed.x = -1*mSpeed.x;
+      // if(boid->speed.x > 0)
+      // 	boid->speed.x = mSpeed.x;
 
-      if(boid->speed.z < 0)
-	boid->speed.z = -1*mSpeed.z;
-      if(boid->speed.z > 0)
-	boid->speed.z = mSpeed.z;	  
+      // if(boid->speed.y < 0)
+      // 	boid->speed.y = -1*mSpeed.y;
+      // if(boid->speed.y > 0)
+      // 	boid->speed.y = mSpeed.y;
+
+      // if(boid->speed.z < 0)
+      // 	boid->speed.z = -1*mSpeed.z;
+      // if(boid->speed.z > 0)
+      // 	boid->speed.z = mSpeed.z;
+      
     }
 }
 
-void Evader::update(GLfloat time)
+void Evader::update(GLfloat time, vector<Boid> chaserVector)
 {
   updateLeader();
-  cout << "Position for leader: (" << leader.position.x << "," << leader.position.y << "," << leader.position.z << ")" << endl;
-  flocking();
+  /*cout << "Position for leader: ("
+       << leader.position.x << ","
+       << leader.position.y << ","
+       << leader.position.z << ")" << endl;*/
+  flocking(chaserVector);
 }
 
 void Evader::boundPositionBoid(Boid *boid)
@@ -146,7 +154,7 @@ void Evader::boundPositionBoid(Boid *boid)
       boid->speed.z -= 0.2;
 }
 
-void Evader::flocking()
+void Evader::flocking(vector<Boid> chaserVector)
 {
   int N = evaderVector.size();
 
@@ -157,11 +165,12 @@ void Evader::flocking()
       avoidance(&evaderVector.at(i), i);
       alignment(&evaderVector.at(i), i);
       followLeader(&evaderVector.at(i));
+      avoidChaser(&evaderVector.at(i), chaserVector);
 
       evaderVector.at(i).speed += evaderVector.at(i).cohesionVector*cohesionWeight +
 	evaderVector.at(i).avoidanceVector*avoidanceWeight +
       	evaderVector.at(i).alignmentVector*alignmentWeight +
-	follow*followWeight;
+	follow*followWeight + avoidChaserVector*avoidChaserWeight;
 
       if(Norm(evaderVector.at(i).speed) > maxSpeed)
 	evaderVector.at(i).speed /= 2.0;
@@ -202,6 +211,34 @@ void Evader::cohesion(Boid *boidI, int index)
 
   float dist = Norm(boidI->averagePosition - boidI->position);
   boidI->cohesionVector = Normalize(boidI->averagePosition - boidI->position)*dist;
+}
+
+void Evader::avoidChaser(Boid* boidI, vector<Boid> chaserVector)
+{
+  avoidChaserVector = vec3(0,0,0); // boidI->avoidChaserVector = vec3(0,0,0) instead?
+  int N = chaserVector.size();
+  uint count = 0;
+
+  for(int j = 0; j < N; j++)
+    {
+      Boid chaserJ = chaserVector.at(j);
+      
+	  vec3 distanceVector = chaserJ.position - boidI->position;
+	  float distance = Norm(distanceVector);
+	  if(distance < awarenessRadius)
+	    {
+	      if(distance != 0.0)
+		avoidChaserVector -= distanceVector/distance; // boidI->avoidChaserVector instead?
+	      else
+		avoidChaserVector -= distanceVector;
+	      count++;
+	    }
+    }
+  if(count > 0)
+    {
+      avoidChaserVector /= (float)count;
+      //boidI->avoidanceVector = Normalize(boidI->avoidanceVector);
+    }
 }
 
 void Evader::avoidance(Boid* boidI, int index)
