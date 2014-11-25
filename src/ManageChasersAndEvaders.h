@@ -29,7 +29,7 @@ class ManageChasersAndEvaders
 {
  private:
   //~ManageChasersAndEvaders();
-void mergeFlocks();
+bool mergeFlocks();
 void splitFlock();
 
  public:

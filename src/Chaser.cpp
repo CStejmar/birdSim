@@ -117,10 +117,10 @@ if(Norm(boid->speed) > Norm(mSpeed))
 
 void Chaser::update(GLfloat time, vector<Boid> evaderVector)
 {
-  cout << "Position for chaser: ("
+  /*cout << "Position for chaser: ("
        << chaserVector.at(0).position.x << ","
        << chaserVector.at(0).position.y << ","
-       << chaserVector.at(0).position.z << ")" << endl;
+       << chaserVector.at(0).position.z << ")" << endl;*/
 
   searchPrey(evaderVector);
 }
