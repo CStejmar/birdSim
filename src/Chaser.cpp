@@ -10,7 +10,7 @@ Chaser::Chaser(GLuint *phongShader, char * mdlPath, char *imgPath, vec3 pos, int
 
   glUseProgram(*shader);
 
-  glActiveTexture(GL_TEXTURE5);
+  glActiveTexture(GL_TEXTURE6);
   LoadTGATextureSimple(imagePath, &texture);
   glUniform1i(glGetUniformLocation(*shader, "tex"), 6); // Texture unit 6
 

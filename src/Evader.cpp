@@ -1,20 +1,12 @@
 
 #include "Evader.h"
 
-Evader::Evader(GLuint *phongShader, char * mdlPath, char *imgPath, vec3 pos, int numOfBoids)
+Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids)
 {
   shader = phongShader;
 
-  modelPath = mdlPath;
-  imagePath = imgPath;
-
-  glUseProgram(*shader);
-
-  glActiveTexture(GL_TEXTURE5);
-  LoadTGATextureSimple(imagePath, &texture);
-  glUniform1i(glGetUniformLocation(*shader, "tex"), 5); // Texture unit 5
-
-  model = LoadModelPlus(modelPath);
+  model = evaderModel;
+  texture = evaderTexture;
 
   maxDistance = 20.0;
   minDistance = 5.0;

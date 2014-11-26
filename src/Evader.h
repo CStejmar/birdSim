@@ -43,8 +43,8 @@ class Evader
 
   vec3 follow, avoidChaserVector;
   
-  char *modelPath;
-  char *imagePath;
+  //char *modelPath;
+  //char *imagePath;
   GLuint* shader;
   GLuint texture;
   Model* model;
@@ -64,7 +64,7 @@ class Evader
   Boid leader;
   std::vector<Boid> evaderVector; // Change to pointers?
 
-  Evader(GLuint *phongShader, char * modelPath, char *imagePath, vec3 pos, int numOfBoids);
+  Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids);
   void draw(mat4 cameraMatrix);
   //void animate(GLfloat time);
   void update(GLfloat time, vector<Boid> chaserVector);

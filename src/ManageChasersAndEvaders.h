@@ -29,15 +29,20 @@ class ManageChasersAndEvaders
 {
  private:
   //~ManageChasersAndEvaders();
-bool mergeFlocks();
-void splitFlock();
+  bool mergeFlocks();
+  void splitFlock(Evader *flock);
+  GLuint* shader;
+  Model *evaderModel;
+  Model *chaserModel;
+  GLuint evaderTexture;
+  GLuint chaserTexture;
 
  public:
   Chaser* chasers;
   vector<Evader*> flocks;
   //vector<Chaser*> predators;
 
-  ManageChasersAndEvaders(GLuint* shader);
+  ManageChasersAndEvaders(GLuint* phongShader, char * modelPathEvader, char *imagePathEvader, char * modelPathChaser, char *imagePathChaser);
   void update(GLfloat time);  
   void draw(mat4 cameraMatrix);
 };
