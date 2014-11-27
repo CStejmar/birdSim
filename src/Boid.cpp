@@ -6,7 +6,7 @@ Boid::Boid()
   position = vec3(0,0,0);
   averagePosition = vec3(0.0, 0.0, 0.0);
   
-  speed = vec3(1.0, 0.2, 0.8);
+  speed = vec3(0,0,0); //vec3(1.0, 0.2, 0.8);
   speedDifference = vec3(0.0, 0.0, 0.0);
   
   avoidanceVector = vec3(0.0, 0.0, 0.0);
@@ -15,6 +15,7 @@ Boid::Boid()
 
   forward = vec3(0,0,-1); //Or vec3(0,0,1)?; According to blender: -1 in z
   up = vec3(0,1,0);
+  //side = vec3(1,0,0);, needed?
 
   rotationMatrix = IdentityMatrix();
 }
@@ -24,7 +25,7 @@ Boid::Boid(vec3 pos)
   position = pos;
   averagePosition = vec3(0.0, 0.0, 0.0);
   
-  speed = vec3(1.0, 0.2, 0.8);
+  speed = vec3(0,0,0); //vec3(1.0, 0.2, 0.8);
   speedDifference = vec3(0.0, 0.0, 0.0);
   
   avoidanceVector = vec3(0.0, 0.0, 0.0);

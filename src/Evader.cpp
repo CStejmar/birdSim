@@ -13,13 +13,14 @@ Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, ve
   awarenessRadius = 40;
 
   //maxSpeed = vec3(1,1,1);
-  maxSpeed = Norm(vec3(1.4,1.4,1.4));
+  maxSpeed = Norm(vec3(1.3,1.3,1.3));
 
   cohesionWeight = 0.002; //0.01
   avoidanceWeight = 0.04; //0.02, 0.2
   alignmentWeight = 0.001; //0.0001;
   followWeight = 0.002; //0.004;
   avoidChaserWeight = 0.4;
+  avoidChaserWeightLeader = 0.004; //0.0002
 
   // Bounding the positions inside this cube. Should maybe center around camera position instead.
   xMin = 0.0;
@@ -46,7 +47,6 @@ void Evader::draw(mat4 cameraMatrix)
     {
       evaderVector.at(i).draw(cameraMatrix, shader, model, &texture);
     }
-
   //leader.draw(cameraMatrix, shader, model, &texture);
 }
 
@@ -83,6 +83,8 @@ void Evader::updateLeader()
   // cout << "highInterval = " << highInterval << endl;
 
   vec3 offsetVec = vec3(xOffset/2.0, yOffset/4.0, zOffset/2.0); // for testing: vec3(0,0,0);
+
+  // TODO: To make the flock not change direction so often, do not update offsetVec every frame.
   leader.speed += offsetVec;
 
   if(Norm(leader.speed) > maxSpeed)
@@ -95,7 +97,7 @@ void Evader::updateLeader()
 
 void Evader::checkMaxSpeed(Boid *boid)
 {
-  vec3 mSpeed = vec3(1,1,1);
+  vec3 mSpeed = vec3(1.3,1.3,1.3);
 if(Norm(boid->speed) > Norm(mSpeed))
     {
       boid->speed = (boid->speed/Norm(boid->speed))*Norm(mSpeed);
@@ -177,6 +179,24 @@ void Evader::flocking(vector<Boid> chaserVector)
   
 }
 
+// Inside chasers view angle, xz-plane
+bool Evader::insideView(Boid boidI, Boid boidJ, float radius)
+{
+  float viewAngle = 4.0; // ([-4,4])
+  vec3 directionToEvader = boidJ.position - boidI.position;
+  if(Norm(directionToEvader) < radius) // radius: ex. maxDistance, awarenessRadius, minDistance
+    {
+      float angle = atan2(boidI.direction.x - directionToEvader.x, boidI.direction.z - directionToEvader.z);
+  
+      if(abs(angle) < viewAngle)
+	{
+	  return true;
+	  //cout << "In Evader class: Evader inside view!!!" << endl;
+	}
+    }
+  return false;
+}
+
 // Should move the for-loop to flocking() and have boidJ, cohesionCount as arguments and as well the if(i != j) outside.
 void Evader::cohesion(Boid *boidI, int index)
 {
@@ -229,6 +249,7 @@ void Evader::avoidChaser(Boid* boidI, vector<Boid> chaserVector)
   if(count > 0)
     {
       avoidChaserVector /= (float)count;
+      leader.speed += avoidChaserVector*avoidChaserWeightLeader;
       //boidI->avoidanceVector = Normalize(boidI->avoidanceVector);
     }
 }

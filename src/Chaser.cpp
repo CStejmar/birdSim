@@ -1,31 +1,24 @@
 
 #include "Chaser.h"
 
-Chaser::Chaser(GLuint *phongShader, char * mdlPath, char *imgPath, vec3 pos, int numOfBoids)
+Chaser::Chaser(GLuint *phongShader, Model *chaserModel, GLuint chaserTexture, vec3 pos, int numOfBoids)
 {
   shader = phongShader;
 
-  modelPath = mdlPath;
-  imagePath = imgPath;
-
-  glUseProgram(*shader);
-
-  glActiveTexture(GL_TEXTURE6);
-  LoadTGATextureSimple(imagePath, &texture);
-  glUniform1i(glGetUniformLocation(*shader, "tex"), 6); // Texture unit 6
-
-  model = LoadModelPlus(modelPath);
+  model = chaserModel;
+  texture = chaserTexture;
 
   awarenessRadius = 80.0;
   minDistance = 40.0;
 
-  maxSpeed = Norm(vec3(1.7,1.7,1.7));
+  maxSpeed = Norm(vec3(1.6,1.6,1.6));
 
   avoidanceWeight = 0.02;//0.04; //0.02, 0.2
-  attackWeight = 0.02; //0.004;
+  attackWeight = 0.003; //0.004;
+  nearestWeight = 0.006;
 
-  float lowInterval = 0.0;
-  float highInterval = 0.5;
+  lowInterval = 0.0;
+  highInterval = 0.5;
 
   // Bounding the positions inside this cube. Should maybe center around camera position instead.
   xMin = 0.0;
@@ -92,7 +85,7 @@ void Chaser::setRandomSpeed(Boid *boidI)
 
 void Chaser::checkMaxSpeed(Boid *boid)
 {
-  vec3 mSpeed = vec3(1,1,1);
+  vec3 mSpeed = vec3(1.6,1.6,1.6);
 if(Norm(boid->speed) > Norm(mSpeed))
     {
       boid->speed = (boid->speed/Norm(boid->speed))*Norm(mSpeed);
@@ -115,14 +108,14 @@ if(Norm(boid->speed) > Norm(mSpeed))
     }
 }
 
-void Chaser::update(GLfloat time, vector<Boid> evaderVector)
+void Chaser::update(GLfloat time, int chaserIndex, vector<Boid> evaderVector)
 {
   /*cout << "Position for chaser: ("
        << chaserVector.at(0).position.x << ","
        << chaserVector.at(0).position.y << ","
        << chaserVector.at(0).position.z << ")" << endl;*/
 
-  searchPrey(evaderVector);
+  searchPrey(chaserIndex, evaderVector);
 }
 
 void Chaser::boundPositionBoid(Boid *boid)
@@ -159,34 +152,30 @@ void Chaser::boundPositionBoid(Boid *boid)
     }
 }
 
-void Chaser::searchPrey(vector<Boid> evaderVector)
+void Chaser::searchPrey(int chaserIndex, vector<Boid> evaderVector)
 {
   int N = chaserVector.size();
 
-  for(int i = 0; i < N; i++)
-    {
-      if(N > 1)
-	avoidance(&chaserVector.at(i), i);
+  if(N > 1)
+    avoidance(&chaserVector.at(chaserIndex), chaserIndex);
       
-      attack(&chaserVector.at(i),evaderVector);
-      setRandomSpeed(&chaserVector.at(i));
+  attack(&chaserVector.at(chaserIndex),evaderVector);
+  setRandomSpeed(&chaserVector.at(chaserIndex));
 
-      chaserVector.at(i).speed += chaserVector.at(i).avoidanceVector*avoidanceWeight +
-	chaserVector.at(i).direction*attackWeight;
+  chaserVector.at(chaserIndex).speed += chaserVector.at(chaserIndex).avoidanceVector*avoidanceWeight + attackVector*attackWeight + nearest*nearestWeight;
       
-      chaserVector.at(i).direction = chaserVector.at(i).speed; // Normalize(
+  chaserVector.at(chaserIndex).direction = chaserVector.at(chaserIndex).speed; // Normalize(
 
-      if(Norm(chaserVector.at(i).speed) > maxSpeed)
-	chaserVector.at(i).speed /= 2.0;
+  if(Norm(chaserVector.at(chaserIndex).speed) > maxSpeed)
+    chaserVector.at(chaserIndex).speed /= 2.0;
+  //checkMaxSpeed(&chaserVector.at(chaserIndex));
 
-      chaserVector.at(i).setRotation();
+  chaserVector.at(chaserIndex).setRotation();
 
-      chaserVector.at(i).position += chaserVector.at(i).speed;
-      boundPositionBoid(&chaserVector.at(i));
+  chaserVector.at(chaserIndex).position += chaserVector.at(chaserIndex).speed;
+  boundPositionBoid(&chaserVector.at(chaserIndex));
    
-      //cout << "Position for boid i: (" << chaserVector.at(i).position.x << "," << chaserVector.at(i).position.y << "," << chaserVector.at(i).position.z << ")" << endl;
-    }
-  
+  //cout << "Speed for chaser at chaserIndex: (" << chaserVector.at(chaserIndex).speed.x << "," << chaserVector.at(chaserIndex).speed.y << "," << chaserVector.at(chaserIndex).speed.z << ")" << endl;
 }
 
 // Should move the for-loop to flocking() and have boidJ, cohesionCount as arguments and as well the if(i != j) outside.
@@ -207,9 +196,9 @@ void Chaser::avoidance(Boid* boidI, int index)
 	    {
 	      //float fx = exp(1.0/distance) - 1.0;
 	      if(distance != 0.0)
-		boidI->avoidanceVector -= CrossProduct(distanceVector/distance,boidI->up);
+		boidI->avoidanceVector -= distanceVector/distance; //CrossProduct(distanceVector/distance,boidI->up);
 	      else
-		boidI->avoidanceVector -= CrossProduct(distanceVector,boidI->up);
+		boidI->avoidanceVector -= distanceVector; //CrossProduct(distanceVector,boidI->up);
 	      count++;
 	    }
 	}
@@ -221,24 +210,78 @@ void Chaser::avoidance(Boid* boidI, int index)
     }
 }
 
+// Inside chasers view angle, xz-plane
+bool Chaser::insideView(Boid chaser, Boid evader)
+{
+  float viewAngle = 4.0; // ([-20,20])
+  vec3 directionToEvader = evader.position - chaser.position;
+  if(Norm(directionToEvader) < awarenessRadius)
+    {
+      float angle = atan2(chaser.direction.x - directionToEvader.x, chaser.direction.z - directionToEvader.z);
+  
+      if(abs(angle) < viewAngle)
+	{
+	  return true;
+	  //cout << "In Chaser class: Evader inside view!!!" << endl;
+	}
+    }
+  return false;
+}
+
+
 void Chaser::attack(Boid* boidI, vector<Boid> evaders)
 {
-  boidI->direction = vec3(0,0,0);
+  attackVector = vec3(0,0,0);
+  nearest = vec3(0,0,0);
   int N = evaders.size();
   uint count = 0;
 
+  float minD = awarenessRadius;
+  int minIndex = -1;
+
   for(int i = 0; i < N; i++)
     {
-      if(Norm(evaders.at(i).position - boidI->position) < awarenessRadius)
+      if(insideView(*boidI,evaders.at(i)))
 	{
-	  boidI->direction += evaders.at(i).position - boidI->position;
+	  if(Norm(evaders.at(i).position - boidI->position) < minD)
+	    {
+	      minD = Norm(evaders.at(i).position - boidI->position);
+	      minIndex = i;
+	    }
+	  attackVector += evaders.at(i).position - boidI->position;
 	  count++;
 	}
     }
+  //cout << "In chaser class: COUNT = " << count << endl;
   if(count > 0)
-    boidI->direction /= (float)count;
+    attackVector /= (float)count;
   //boidI->direction = Normalize(boidI->direction);
+
+  if(minIndex != -1)
+    nearest = evaders.at(minIndex).position - boidI->position;
 }
+
+// void Chaser::attackNearest(Boid* boidI, vector<Boid> evaders)
+// {
+//   nearest = vec3(0,0,0);
+//   int N = evaders.size();
+
+//   float minD = awarenessRadius;
+//   int minIndex = -1;
+//   for(int i = 0; i < N; i++)
+//     {
+//       if(Norm(evaders.at(i).position - boidI->position) < awarenessRadius)
+// 	{
+// 	  if(Norm(evaders.at(i).position - boidI.position) < minD)
+// 	    {
+// 	      minD = Norm(evaders.at(i).position - boidI.position);
+// 	      minIndex = i;
+// 	    }
+// 	}
+//     }
+
+//   nearest = evaders.at(minIndex).position - boidI->position;
+// }
 
 void Chaser::makeIndividuals(int inhabitants, vec3 position)
 {

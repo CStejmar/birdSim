@@ -5,9 +5,6 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char * mod
 {
   shader = phongShader;
 
-  //modelPath = mdlPath;
-  //imagePath = imgPath;
-
   glUseProgram(*shader);
 
   //________________Evader________________
@@ -30,7 +27,9 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char * mod
   //Evader* evaders2 = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 20);
   flocks.push_back(evaders);
   flocks.push_back(evaders2);
-  chasers = new Chaser(shader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
+
+  chasers = new Chaser(shader, chaserModel, chaserTexture, vec3(300,100,300), 3);
+  //chasers = new Chaser(shader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
 }
 
 /*ManageChasersAndEvaders::~ManageChasersAndEvaders()
@@ -46,6 +45,7 @@ void vectorAppend(vector<Boid> *v1, vector<Boid> *v2)
 }
 
 // TODO: Should merge the smaller vector into the larger.
+// Also: Maybe check if two boids are close instead of the leaders.
 bool ManageChasersAndEvaders::mergeFlocks()
 {
   int numberOfFlocks = flocks.size();
@@ -72,15 +72,10 @@ bool ManageChasersAndEvaders::mergeFlocks()
 
 void ManageChasersAndEvaders::splitFlock(Evader *flock)
 {
-  // int numberOfFlocks = flocks.size();
-  
-  // for(int i = 0; i < numberOfFlocks; i++)
-  //   {
-  
-  int splitDistance = 100;
-  int minD = 1000; // Initial high value
+  float splitDistance = 50.0;
+  float minD = 1000.0; // Initial high value
   int minIndex = -1;
-  int maxD = 0;
+  float maxD = 0.0;
   int maxIndex = -1;
 
   int numberOfEvaders = flock->evaderVector.size();
@@ -109,9 +104,8 @@ void ManageChasersAndEvaders::splitFlock(Evader *flock)
       vec3 clusterPos1 = flock->evaderVector.at(minIndex).position;
       vec3 clusterPos2 = flock->evaderVector.at(maxIndex).position;
       Evader* evader = new Evader(shader, evaderModel, evaderTexture, clusterPos2, 0);
-      //Evader *evader = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", clusterPos2, 0);
       
-      for(int i = 0; i < flock->evaderVector.size(); i++)
+      for(uint i = 0; i < flock->evaderVector.size(); i++)
 	{
 	  vec3 boidIPos = flock->evaderVector.at(i).position;
 
@@ -127,20 +121,43 @@ void ManageChasersAndEvaders::splitFlock(Evader *flock)
     }
 }
 
+int ManageChasersAndEvaders::nearestFlock(Boid chaser)
+{
+  float minD = 1000.0; // Initial high value
+  int minIndex = -1;
+
+  for(uint i = 0; i < flocks.size(); i++)
+    {
+      if(Norm(flocks.at(i)->leader.position - chaser.position) < minD)
+	{
+	  minD = Norm(flocks.at(i)->leader.position - chaser.position);
+	  minIndex = i;
+	}
+    }
+  return minIndex;
+}
+
 void ManageChasersAndEvaders::update(GLfloat time)
 {
-  int N = flocks.size();
-  cout << "Number of flocks: " << N << endl;
+  int numberOfFlocks = flocks.size();
+  cout << "Number of flocks: " << numberOfFlocks << endl;
   
-  for(int i = 0; i < N; i++)
+  for(int i = 0; i < numberOfFlocks; i++)
     {
       flocks.at(i)->update(time,chasers->chaserVector);
-      chasers->update(time,flocks.at(i)->evaderVector);
       splitFlock(flocks.at(i));
-      cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << endl;
+      cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n\n\n";
+    }
+
+  int numberOfChasers = chasers->chaserVector.size();
+  for(int i = 0; i < numberOfChasers; i++)
+    {
+      int indexNearest = nearestFlock(chasers->chaserVector.at(i));
+      chasers->update(time,i,flocks.at(indexNearest)->evaderVector);
     }
   
-  if(N > 1)
+  numberOfFlocks = flocks.size();
+  if(numberOfFlocks > 1)
     {
       mergeFlocks();
     }
