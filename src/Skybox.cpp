@@ -88,7 +88,7 @@ void Skybox::loadImages(const char *imagePath) //imagePath = "textures/skybox/sk
 
   for(int i = 0; i < j; i++) 
     {
-      char file[80]; // Godtycklig längd, bara strängen får plats
+      char file[80]; // Arbitrary length, the string just has to fit
       sprintf(file, imagePath, i);
       
       glActiveTexture(GL_TEXTURE10 + i);

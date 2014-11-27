@@ -1,7 +1,7 @@
 
 #include "ManageChasersAndEvaders.h"
 
-ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char * modelPathEvader, char *imagePathEvader, char * modelPathChaser, char *imagePathChaser)
+ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser)
 {
   shader = phongShader;
 
@@ -21,6 +21,8 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char * mod
 
   chaserModel = LoadModelPlus(modelPathChaser);
 
+  loadEvaderModels();
+
   Evader* evaders = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 150);
   Evader* evaders2 = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 20);
   //Evader* evaders = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 150);
@@ -30,6 +32,24 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char * mod
 
   chasers = new Chaser(shader, chaserModel, chaserTexture, vec3(300,100,300), 3);
   //chasers = new Chaser(shader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
+
+  prevTime = 0.0;
+  modelIndex = 0;
+}
+
+// "../textures/skybox/skybox2/sky%d.tga"
+void ManageChasersAndEvaders::loadEvaderModels()
+{
+  char *modelPath = "../objects/evader/crow/crow%d.obj";
+  for(int i = 1; i < 42; i++) 
+    {
+      char file[80]; // Arbitrary length, the string just has to fit
+      sprintf(file, modelPath, i);
+      
+      Model* m = LoadModelPlus(file);
+      evaderModels.push_back(m);
+    }
+
 }
 
 /*ManageChasersAndEvaders::~ManageChasersAndEvaders()
@@ -146,7 +166,7 @@ void ManageChasersAndEvaders::update(GLfloat time)
     {
       flocks.at(i)->update(time,chasers->chaserVector);
       splitFlock(flocks.at(i));
-      cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n\n\n";
+      cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n";
     }
 
   int numberOfChasers = chasers->chaserVector.size();
@@ -160,6 +180,24 @@ void ManageChasersAndEvaders::update(GLfloat time)
   if(numberOfFlocks > 1)
     {
       mergeFlocks();
+    }
+
+  animate(time);
+
+}
+
+void ManageChasersAndEvaders::animate(GLfloat time)
+{
+  if((time - prevTime) > 0.010) // 0.010
+    {
+      if(modelIndex > 40)
+	modelIndex = 0;
+      for(uint i = 0; i < flocks.size(); i++)
+	{
+	  flocks.at(i)->model = evaderModels.at(modelIndex);
+	}
+      prevTime = time;
+      modelIndex++;
     }
 }
 

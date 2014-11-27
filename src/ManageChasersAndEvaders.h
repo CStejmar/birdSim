@@ -23,19 +23,25 @@ class ManageChasersAndEvaders
   bool mergeFlocks();
   void splitFlock(Evader *flock);
   int nearestFlock(Boid chaser);
+  void loadEvaderModels();
+  void animate(GLfloat time);
   
   GLuint* shader;
   Model *evaderModel;
   Model *chaserModel;
+  vector<Model*> evaderModels;
   GLuint evaderTexture;
   GLuint chaserTexture;
+
+  GLfloat prevTime;
+  uint modelIndex;
 
  public:
   Chaser* chasers;
   vector<Evader*> flocks;
   //vector<Chaser*> predators;
 
-  ManageChasersAndEvaders(GLuint* phongShader, char * modelPathEvader, char *imagePathEvader, char * modelPathChaser, char *imagePathChaser);
+  ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser);
   void update(GLfloat time);  
   void draw(mat4 cameraMatrix);
 };

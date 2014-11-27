@@ -18,7 +18,6 @@ class Evader
  private:
   
   GLuint* shader;
-  Model* model;
   GLuint texture;
 
   vec3 follow, avoidChaserVector;
@@ -44,7 +43,7 @@ class Evader
 bool insideView(Boid boidI, Boid boidJ, float radius);
 
  public:
-  
+  Model* model;
   Boid leader;
   std::vector<Boid> evaderVector; // Change to pointers?
 
