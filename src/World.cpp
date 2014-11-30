@@ -76,7 +76,7 @@ void World::drawTerrainVector(TerrainPatch* t){
 }
 
 void World::draw(){
-  t = (GLfloat)glutGet(GLUT_ELAPSED_TIME) / 3000;
+  t = (GLfloat)glutGet(GLUT_ELAPSED_TIME) / 1000.0;
   camera->update();
 
   birds->update(t);
@@ -94,7 +94,7 @@ void World::draw(){
     terrainVector.at(i)->draw(camera->cameraMatrix);
     }*/
 
-  birds->draw(camera->cameraMatrix);
+  birds->draw(t,camera->cameraMatrix);
   //evaders->draw(camera->cameraMatrix);
   //chasers->draw(camera->cameraMatrix);
 }

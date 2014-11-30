@@ -24,6 +24,8 @@ class Boid
   vec3 up;
   vec3 direction;
 
+  uint animationIndex;
+
   mat4 rotationMatrix;
 
   Boid();

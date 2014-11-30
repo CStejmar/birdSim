@@ -7,7 +7,7 @@ ifeq ($(UNAME), Darwin) # Mac
 CXX     = gcc
 CCFLAGS = -g -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra
 CFLAGS  = -g -std=c99 -pedantic -Wall -Wextra
-LINK    = -g -shared-libgcc -lstdc++ -framework OpenGL -framework Cocoa
+LINK    = -g -shared-libgcc -lstdc++ -framework OpenGL -framework Cocoa -framework OpenAL
 GLUTPATH = ../common/mac
 GLUT	= ../common/mac/MicroGlut.m
 endif

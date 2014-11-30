@@ -37,6 +37,10 @@ Boid::Boid(vec3 pos)
   //side = vec3(1,0,0);, needed?
 
   rotationMatrix = IdentityMatrix();
+
+  uint max = 40;
+  uint min = 0;
+  animationIndex = rand()%(max-min + 1) + min;
 }
 
 // void Boid::setDirection()

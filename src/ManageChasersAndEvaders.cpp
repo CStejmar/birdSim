@@ -1,6 +1,14 @@
 
 #include "ManageChasersAndEvaders.h"
 
+// int endWithError(char* msg, int error=0)
+// {
+//   cout << "Error message: " << msg << endl;
+//   //system("PAUSE");
+//   return error;
+
+// }
+
 ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser)
 {
   shader = phongShader;
@@ -35,6 +43,9 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *mode
 
   prevTime = 0.0;
   modelIndex = 0;
+
+  // fp = NULL;
+  // fp=fopen("country_sounds.wav", "rb");
 }
 
 // "../textures/skybox/skybox2/sky%d.tga"
@@ -183,7 +194,6 @@ void ManageChasersAndEvaders::update(GLfloat time)
     }
 
   animate(time);
-
 }
 
 void ManageChasersAndEvaders::animate(GLfloat time)
@@ -201,12 +211,48 @@ void ManageChasersAndEvaders::animate(GLfloat time)
     }
 }
 
-void ManageChasersAndEvaders::draw(mat4 cameraMatrix)
+void ManageChasersAndEvaders::animateAndDraw(GLfloat time, mat4 cameraMatrix)
 {
-  int N = flocks.size();
-  for(int i = 0; i < N; i++)
-    {
-      flocks.at(i)->draw(cameraMatrix);
-    }
+  //if((time - prevTime) > 0.020) // 0.010
+  //{
+      for(uint i = 0; i < flocks.size(); i++)
+	{
+	  uint numberOfFlockMembers = flocks.at(i)->evaderVector.size();
+	  for(uint j = 0; j < numberOfFlockMembers; j++)
+	    {
+	      uint currentAnimationIndex = flocks.at(i)->evaderVector.at(j).animationIndex;
+	      if(currentAnimationIndex > 40)
+		flocks.at(i)->evaderVector.at(j).animationIndex = 0;
+	      
+	      flocks.at(i)->evaderVector.at(j).draw(cameraMatrix,shader,evaderModels.at(flocks.at(i)->evaderVector.at(j).animationIndex),&evaderTexture);
+	      flocks.at(i)->evaderVector.at(j).animationIndex++;
+	      cout << "Animation index = " << flocks.at(i)->evaderVector.at(j).animationIndex << endl;
+	    }
+	}
+      //prevTime = time;
+      // }
+  // else
+  //   for(uint i = 0; i < flocks.size(); i++)
+  //     {
+  // 	uint numberOfFlockMembers = flocks.at(i)->evaderVector.size();
+  // 	for(uint j = 0; j < numberOfFlockMembers; j++)
+  // 	  {
+  // 	    uint currentAnimationIndex = flocks.at(i)->evaderVector.at(j).animationIndex;
+  // 	    if(currentAnimationIndex > 40)
+  // 	      flocks.at(i)->evaderVector.at(j).animationIndex = 0;
+  // 	    flocks.at(i)->evaderVector.at(j).draw(cameraMatrix,shader,evaderModels.at(flocks.at(i)->evaderVector.at(j).animationIndex),&evaderTexture);
+  // 	  }
+  // 	//prevTime = time;
+  //     }
+}
+
+void ManageChasersAndEvaders::draw(GLfloat time, mat4 cameraMatrix)
+{
+  // int N = flocks.size();
+  // for(int i = 0; i < N; i++)
+  //   {
+  //     flocks.at(i)->draw(cameraMatrix);
+  //   }
+  animateAndDraw(time,cameraMatrix);
   chasers->draw(cameraMatrix);
 }
