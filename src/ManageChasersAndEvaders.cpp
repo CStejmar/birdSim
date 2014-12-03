@@ -31,8 +31,8 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *mode
 
   loadEvaderModels();
 
-  Evader* evaders = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 150);
-  Evader* evaders2 = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 20);
+  Evader* evaders = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 150, 0);
+  Evader* evaders2 = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 20, 1);
   //Evader* evaders = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 150);
   //Evader* evaders2 = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 20);
   flocks.push_back(evaders);
@@ -77,28 +77,31 @@ void vectorAppend(vector<Boid> *v1, vector<Boid> *v2)
 
 // TODO: Should merge the smaller vector into the larger.
 // Also: Maybe check if two boids are close instead of the leaders.
-bool ManageChasersAndEvaders::mergeFlocks()
+// Also: might give vector out of range in some cases! Fix!
+void ManageChasersAndEvaders::mergeFlocks(Camera *cam)
 {
-  int numberOfFlocks = flocks.size();
+  //int numberOfFlocks = flocks.size();
   float mergeThreshold = 35.0;
   
-  for(int i = 0; i < numberOfFlocks; i++)
+  for(uint i = 0; i < flocks.size(); i++)
     {
-      for(int j = 0; j < numberOfFlocks; j++)
+      for(uint j = 0; j < flocks.size(); j++)
 	{
-	  if(i != j && Norm(flocks.at(j)->leader.position - flocks.at(i)->leader.position) < mergeThreshold)
+	  if(i != j && Norm(flocks.at(j)->leader.position - flocks.at(i)->leader.position) < mergeThreshold && i < j)
 	    {
+	      if(cam->flockIndex == flocks.at(j)->flockIndex)
+		cam->flockIndex = flocks.at(i)->flockIndex;
 	      vectorAppend(&flocks.at(i)->evaderVector,&flocks.at(j)->evaderVector);
 	      cout << "Append!" << endl;
 	      flocks.erase(flocks.begin()+j);
 		//delete flocks.at(j);
 	      cout << "FLOCKS = " << flocks.size() << endl;
-	      return true;
+	      //return true;
 	    }
 	  
 	}
     }
-  return false;
+  //return false;
 }
 
 void ManageChasersAndEvaders::splitFlock(Evader *flock)
@@ -109,8 +112,8 @@ void ManageChasersAndEvaders::splitFlock(Evader *flock)
   float maxD = 0.0;
   int maxIndex = -1;
 
-  int numberOfEvaders = flock->evaderVector.size();
-  for(int i = 0; i < numberOfEvaders; i++)
+  //int numberOfEvaders = flock->evaderVector.size();
+  for(uint i = 0; i < flock->evaderVector.size(); i++)
     {
       Boid boidI = flock->evaderVector.at(i);
 
@@ -134,7 +137,7 @@ void ManageChasersAndEvaders::splitFlock(Evader *flock)
     {
       vec3 clusterPos1 = flock->evaderVector.at(minIndex).position;
       vec3 clusterPos2 = flock->evaderVector.at(maxIndex).position;
-      Evader* evader = new Evader(shader, evaderModel, evaderTexture, clusterPos2, 0);
+      Evader* evader = new Evader(shader, evaderModel, evaderTexture, clusterPos2, 0, (int)flocks.size());
       
       for(uint i = 0; i < flock->evaderVector.size(); i++)
 	{
@@ -168,32 +171,86 @@ int ManageChasersAndEvaders::nearestFlock(Boid chaser)
   return minIndex;
 }
 
-void ManageChasersAndEvaders::update(GLfloat time)
+void ManageChasersAndEvaders::sortFlockIndex(Camera *cam)
+{
+  //int vectorIndex = -1;
+  int numberOfFlocks = flocks.size();
+  for(int i = 0; i < numberOfFlocks; i++)
+    {
+      if(flocks.at(i)->flockIndex != i)
+	{
+	  // if(cam->flockIndex < flocks.at(i)->flockIndex)
+	  //   flocks.at(i)->flockIndex = i;
+	  if(cam->flockIndex == flocks.at(i)->flockIndex)
+	    {
+	      cam->flockIndex = i;
+	      flocks.at(i)->flockIndex = i;
+	    }
+	  else
+	    flocks.at(i)->flockIndex = i;
+	}
+    }
+  //return vectorIndex;
+}
+
+void ManageChasersAndEvaders::update(GLfloat time, Camera *cam)
 {
   int numberOfFlocks = flocks.size();
-  cout << "Number of flocks: " << numberOfFlocks << endl;
+  //cout << "Number of flocks: " << numberOfFlocks << endl;
+
+  //Test
+for(int i = 0; i < numberOfFlocks; i++)
+    {
+      cout << "Flock at index " << i << " has flockIndex: " << flocks.at(i)->flockIndex << endl;
+    }
   
   for(int i = 0; i < numberOfFlocks; i++)
     {
       flocks.at(i)->update(time,chasers->chaserVector);
       splitFlock(flocks.at(i));
-      cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n";
+      //cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n";
     }
 
   int numberOfChasers = chasers->chaserVector.size();
   for(int i = 0; i < numberOfChasers; i++)
     {
       int indexNearest = nearestFlock(chasers->chaserVector.at(i));
-      chasers->update(time,i,flocks.at(indexNearest)->evaderVector);
+      if(indexNearest != -1)
+	chasers->update(time,i,flocks.at(indexNearest)->evaderVector);
+      else
+	cout << "No flock is near chaser " << i << endl;
     }
   
   numberOfFlocks = flocks.size();
   if(numberOfFlocks > 1)
     {
-      mergeFlocks();
+      mergeFlocks(cam);
     }
 
-  animate(time);
+  sortFlockIndex(cam);
+  //cout << "Cam: flockIndex = " << cam->flockIndex << endl;
+  if(cam->followFlock)
+    {
+      if(cam->flockIndex >= (int)flocks.size())
+	cam->flockIndex = 0;
+      
+      cam->lookAtPoint = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition; //leader.position;
+      cam->position = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition - Normalize(flocks.at(cam->flockIndex)->evaderVector.at(0).speed)*35; //flocks.at(0)->leader.position - Normalize(flocks.at(0)->leader.speed)*40.0;
+
+      //cam->lookAtPoint = chasers->chaserVector.at(0).position;
+      //cam->position = chasers->chaserVector.at(0).position - Normalize(chasers->chaserVector.at(0).speed)*20;
+
+      cam->position.y += 15.0; // So we se the birds from above.
+    }
+
+  // // Test
+  // for(uint i = 0; i < flocks.size(); i++)
+  //   {
+  //     vec3 avPos = flocks.at(i)->evaderVector.at(0).averagePosition;
+  //     cout << "Average pos for flock " << i << " is (" << avPos.x << "," << avPos.y << "," << avPos.z << ")" << endl;
+  //   }
+
+  //animate(time);
 }
 
 void ManageChasersAndEvaders::animate(GLfloat time)
@@ -213,8 +270,8 @@ void ManageChasersAndEvaders::animate(GLfloat time)
 
 void ManageChasersAndEvaders::animateAndDraw(GLfloat time, mat4 cameraMatrix)
 {
-  //if((time - prevTime) > 0.020) // 0.010
-  //{
+  if((time - prevTime) > 0.010) // 0.010
+  {
       for(uint i = 0; i < flocks.size(); i++)
 	{
 	  uint numberOfFlockMembers = flocks.at(i)->evaderVector.size();
@@ -226,24 +283,24 @@ void ManageChasersAndEvaders::animateAndDraw(GLfloat time, mat4 cameraMatrix)
 	      
 	      flocks.at(i)->evaderVector.at(j).draw(cameraMatrix,shader,evaderModels.at(flocks.at(i)->evaderVector.at(j).animationIndex),&evaderTexture);
 	      flocks.at(i)->evaderVector.at(j).animationIndex++;
-	      cout << "Animation index = " << flocks.at(i)->evaderVector.at(j).animationIndex << endl;
+	      //cout << "Animation index = " << flocks.at(i)->evaderVector.at(j).animationIndex << endl;
 	    }
 	}
-      //prevTime = time;
-      // }
-  // else
-  //   for(uint i = 0; i < flocks.size(); i++)
-  //     {
-  // 	uint numberOfFlockMembers = flocks.at(i)->evaderVector.size();
-  // 	for(uint j = 0; j < numberOfFlockMembers; j++)
-  // 	  {
-  // 	    uint currentAnimationIndex = flocks.at(i)->evaderVector.at(j).animationIndex;
-  // 	    if(currentAnimationIndex > 40)
-  // 	      flocks.at(i)->evaderVector.at(j).animationIndex = 0;
-  // 	    flocks.at(i)->evaderVector.at(j).draw(cameraMatrix,shader,evaderModels.at(flocks.at(i)->evaderVector.at(j).animationIndex),&evaderTexture);
-  // 	  }
-  // 	//prevTime = time;
-  //     }
+      prevTime = time;
+  }
+  else
+    for(uint i = 0; i < flocks.size(); i++)
+      {
+  	uint numberOfFlockMembers = flocks.at(i)->evaderVector.size();
+  	for(uint j = 0; j < numberOfFlockMembers; j++)
+  	  {
+  	    uint currentAnimationIndex = flocks.at(i)->evaderVector.at(j).animationIndex;
+  	    if(currentAnimationIndex > 40)
+  	      flocks.at(i)->evaderVector.at(j).animationIndex = 0;
+  	    flocks.at(i)->evaderVector.at(j).draw(cameraMatrix,shader,evaderModels.at(flocks.at(i)->evaderVector.at(j).animationIndex),&evaderTexture);
+  	  }
+  	//prevTime = time;
+      }
 }
 
 void ManageChasersAndEvaders::draw(GLfloat time, mat4 cameraMatrix)

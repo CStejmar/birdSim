@@ -27,6 +27,10 @@ Camera::Camera(vec3 pos, GLfloat vel, GLfloat sens)
 
   projectionMatrix = frustum(projectionLeft, projectionRight, projectionBottom, projectionTop,projectionNear, projectionFar);
 
+  timer = 30;
+  followFlock = false;
+  flockIndex = -1; // Is set to zero first time we choose to follow a flock.
+
 }
 
 Camera::Camera(float left, float right, float bottom, float top, float near, float far)
@@ -76,6 +80,19 @@ void Camera::handleKeyPress()
     lookAtPoint = VectorAdd(lookAtPoint,ScalarMult(d,velocity));
     position = VectorAdd(position,ScalarMult(d,velocity));
   }
+  if(keyIsDown('o') && timer > 30)
+  {
+    timer = 0;
+    followFlock = true;
+    flockIndex++; // Follow next flock each time 'o' is pressed.
+  }
+  if(keyIsDown('O') && followFlock)
+    {
+      followFlock = false;
+      flockIndex--; // Next time 'o' is pressed, we will follow the previous followed flock.
+    }
+
+  timer++;
 
   //cameraMatrix = lookAtv(position,lookAtPoint,upVector); // In update!
 

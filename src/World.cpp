@@ -77,9 +77,10 @@ void World::drawTerrainVector(TerrainPatch* t){
 
 void World::draw(){
   t = (GLfloat)glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+  birds->update(t,camera);
   camera->update();
 
-  birds->update(t);
   //evaders->update(t,chasers->chaserVector);
   //chasers->update(t,evaders->evaderVector);
 

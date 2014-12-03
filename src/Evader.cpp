@@ -1,7 +1,7 @@
 
 #include "Evader.h"
 
-Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids)
+Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids, int index)
 {
   shader = phongShader;
 
@@ -13,14 +13,14 @@ Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, ve
   awarenessRadius = 40;
 
   //maxSpeed = vec3(1,1,1);
-  maxSpeed = Norm(vec3(1.3,1.3,1.3));
+  maxSpeed = Norm(vec3(1.3,1.3,1.3)); // Not used now, change to this in checkMaxSpeed
 
   cohesionWeight = 0.002; //0.01
   avoidanceWeight = 0.04; //0.02, 0.2
   alignmentWeight = 0.001; //0.0001;
   followWeight = 0.002; //0.004;
   avoidChaserWeight = 0.4;
-  avoidChaserWeightLeader = 0.004; //0.0002
+  avoidChaserWeightLeader = 0.008; //0.0002
 
   // Bounding the positions inside this cube. Should maybe center around camera position instead.
   xMin = 0.0;
@@ -33,12 +33,21 @@ Evader::Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, ve
   makeFlockOf(numOfBoids, pos);
   leader.position = pos + vec3(50,0,50); //vec3(75,0,75); //Makes the leader start ahead of the flock (for following and rotation).
   //leader.speed = vec3(1,0,1);
+
+  prevTime = 0.0;
+  //tempSpeed = vec3(0.3,0.0,0.3);
+  flockIndex = index;
 }
 
 /*Evader::~Evader()
 {
 
 }*/
+
+// bool Evader::findFlock(int index)
+// {
+//   return flockIndex == index;
+// }
 
 void Evader::draw(mat4 cameraMatrix)
 {
@@ -63,32 +72,40 @@ void Evader::draw(mat4 cameraMatrix)
 //   position += speed;
 // }
 
-void Evader::updateLeader()
+void Evader::updateLeader(GLfloat time)
 {
-  float lowInterval = -1.0;
-  float highInterval = 1.0;
+  // To make the flock not change direction so often, update offsetVec every 0.3 sec.
+  if((time - prevTime) > 0.3)
+    {
+      prevTime = time;
 
-  std::random_device rd;
-  std::mt19937 generator(rd());
-  //std::uniform_real_distribution<> dis(-1, 1);
-  //std::default_random_engine generator;
-  std::uniform_real_distribution<float> distribution(lowInterval, highInterval); //(-1.0, 1.0)
+      float lowInterval = -1.0;
+      float highInterval = 1.0;
 
-  float xOffset = distribution(generator);
-  float yOffset = distribution(generator);
-  float zOffset = distribution(generator);
+      std::random_device rd;
+      std::mt19937 generator(rd());
+      //std::uniform_real_distribution<> dis(-1, 1);
+      //std::default_random_engine generator;
+      std::uniform_real_distribution<float> distribution(lowInterval, highInterval); //(-1.0, 1.0)
 
-  // cout << "xOffset = " << xOffset << " zOffset = " << zOffset << endl;
-  // cout << "lowInterval = " << lowInterval << endl;
-  // cout << "highInterval = " << highInterval << endl;
+      float xOffset = distribution(generator);
+      float yOffset = distribution(generator);
+      float zOffset = distribution(generator);
 
-  vec3 offsetVec = vec3(xOffset/2.0, yOffset/4.0, zOffset/2.0); // for testing: vec3(0,0,0);
+      // cout << "xOffset = " << xOffset << " zOffset = " << zOffset << endl;
+      // cout << "lowInterval = " << lowInterval << endl;
+      // cout << "highInterval = " << highInterval << endl;
 
-  // TODO: To make the flock not change direction so often, do not update offsetVec every frame.
-  leader.speed += offsetVec;
+      vec3 offsetVec = vec3(xOffset/2.0, yOffset/4.0, zOffset/2.0); // for testing: vec3(0,0,0);
+      tempSpeed = offsetVec;
+    }
 
-  if(Norm(leader.speed) > maxSpeed)
-    leader.speed /= 2.0;
+  // DONE: To make the flock not change direction so often, do not update offsetVec every frame.
+  leader.speed += tempSpeed;
+
+  checkMaxSpeed(&leader);
+  // if(Norm(leader.speed) > maxSpeed)
+  //   leader.speed /= 2.0;
 
   leader.position += leader.speed;
 
@@ -97,7 +114,7 @@ void Evader::updateLeader()
 
 void Evader::checkMaxSpeed(Boid *boid)
 {
-  vec3 mSpeed = vec3(1.3,1.3,1.3);
+  vec3 mSpeed = vec3(1.0,1.0,1.0);
 if(Norm(boid->speed) > Norm(mSpeed))
     {
       boid->speed = (boid->speed/Norm(boid->speed))*Norm(mSpeed);
@@ -122,7 +139,7 @@ if(Norm(boid->speed) > Norm(mSpeed))
 
 void Evader::update(GLfloat time, vector<Boid> chaserVector)
 {
-  updateLeader();
+  updateLeader(time);
   /*cout << "Position for leader: ("
        << leader.position.x << ","
        << leader.position.y << ","
@@ -158,17 +175,20 @@ void Evader::flocking(vector<Boid> chaserVector)
       cohesion(&evaderVector.at(i), i);
       avoidance(&evaderVector.at(i), i);
       alignment(&evaderVector.at(i), i);
-      followLeader(&evaderVector.at(i));
+ 
       avoidChaser(&evaderVector.at(i), chaserVector);
+      followLeader(&evaderVector.at(i));
 
       evaderVector.at(i).speed += evaderVector.at(i).cohesionVector*cohesionWeight +
 	evaderVector.at(i).avoidanceVector*avoidanceWeight +
       	evaderVector.at(i).alignmentVector*alignmentWeight +
 	follow*followWeight + avoidChaserVector*avoidChaserWeight;
 
-      if(Norm(evaderVector.at(i).speed) > maxSpeed)
-	evaderVector.at(i).speed /= 2.0;
+      checkMaxSpeed(&evaderVector.at(i));
+      // if(Norm(evaderVector.at(i).speed) > maxSpeed)
+      // 	evaderVector.at(i).speed /= 2.0;
 
+      evaderVector.at(i).direction = evaderVector.at(i).speed; // Should make the boids rotate in right direction when attacked
       evaderVector.at(i).setRotation();
 
       evaderVector.at(i).position += evaderVector.at(i).speed;
@@ -182,7 +202,7 @@ void Evader::flocking(vector<Boid> chaserVector)
 // Inside chasers view angle, xz-plane
 bool Evader::insideView(Boid boidI, Boid boidJ, float radius)
 {
-  float viewAngle = 4.0; // ([-4,4])
+  float viewAngle = 3.0; // ([-3,3]) radians
   vec3 directionToEvader = boidJ.position - boidI.position;
   if(Norm(directionToEvader) < radius) // radius: ex. maxDistance, awarenessRadius, minDistance
     {
@@ -219,10 +239,13 @@ void Evader::cohesion(Boid *boidI, int index)
 	}
     }
   if(count > 0)
-    boidI->averagePosition /= (float)count;
-
-  float dist = Norm(boidI->averagePosition - boidI->position);
-  boidI->cohesionVector = Normalize(boidI->averagePosition - boidI->position)*dist;
+    {
+      boidI->averagePosition /= (float)count;
+      float dist = Norm(boidI->averagePosition - boidI->position);
+      boidI->cohesionVector = Normalize(boidI->averagePosition - boidI->position)*dist;
+    }
+  else
+    boidI->averagePosition = boidI->position;
 }
 
 void Evader::avoidChaser(Boid* boidI, vector<Boid> chaserVector)

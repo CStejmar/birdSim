@@ -23,7 +23,7 @@ class Chaser
   void boundPositionBoid(Boid *boid);
   void checkMaxSpeed(Boid *boid);
   void setRandomSpeed(Boid *boidI);
-bool insideView(Boid chaser, Boid evader);
+  bool insideView(Boid chaser, Boid evader);
 
   vec3 attackVector, nearest;
   

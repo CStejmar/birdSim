@@ -11,11 +11,11 @@ Chaser::Chaser(GLuint *phongShader, Model *chaserModel, GLuint chaserTexture, ve
   awarenessRadius = 80.0;
   minDistance = 40.0;
 
-  maxSpeed = Norm(vec3(1.6,1.6,1.6));
+  maxSpeed = Norm(vec3(1.6,1.6,1.6)); // Not used now, change to this in checkMaxSpeed
 
-  avoidanceWeight = 0.02;//0.04; //0.02, 0.2
-  attackWeight = 0.003; //0.004;
-  nearestWeight = 0.006;
+  avoidanceWeight = 0.04;//0.04; //0.02, 0.2
+  attackWeight = 0.005; //0.004;
+  nearestWeight = 0.009;
 
   lowInterval = 0.0;
   highInterval = 0.5;
@@ -85,7 +85,7 @@ void Chaser::setRandomSpeed(Boid *boidI)
 
 void Chaser::checkMaxSpeed(Boid *boid)
 {
-  vec3 mSpeed = vec3(1.6,1.6,1.6);
+  vec3 mSpeed = vec3(1.2,1.2,1.2);
 if(Norm(boid->speed) > Norm(mSpeed))
     {
       boid->speed = (boid->speed/Norm(boid->speed))*Norm(mSpeed);
@@ -164,13 +164,12 @@ void Chaser::searchPrey(int chaserIndex, vector<Boid> evaderVector)
 
   chaserVector.at(chaserIndex).speed += chaserVector.at(chaserIndex).avoidanceVector*avoidanceWeight + attackVector*attackWeight + nearest*nearestWeight;
       
-  chaserVector.at(chaserIndex).direction = chaserVector.at(chaserIndex).speed; // Normalize(
-
-  if(Norm(chaserVector.at(chaserIndex).speed) > maxSpeed)
-    chaserVector.at(chaserIndex).speed /= 2.0;
-  //checkMaxSpeed(&chaserVector.at(chaserIndex));
-
+  chaserVector.at(chaserIndex).direction = chaserVector.at(chaserIndex).speed; // Normalize?
   chaserVector.at(chaserIndex).setRotation();
+
+  // if(Norm(chaserVector.at(chaserIndex).speed) > maxSpeed)
+  //   chaserVector.at(chaserIndex).speed /= 2.0;
+  checkMaxSpeed(&chaserVector.at(chaserIndex));
 
   chaserVector.at(chaserIndex).position += chaserVector.at(chaserIndex).speed;
   boundPositionBoid(&chaserVector.at(chaserIndex));
@@ -196,9 +195,9 @@ void Chaser::avoidance(Boid* boidI, int index)
 	    {
 	      //float fx = exp(1.0/distance) - 1.0;
 	      if(distance != 0.0)
-		boidI->avoidanceVector -= distanceVector/distance; //CrossProduct(distanceVector/distance,boidI->up);
+		boidI->avoidanceVector -= CrossProduct(distanceVector/distance,boidI->up); //distanceVector/distance;
 	      else
-		boidI->avoidanceVector -= distanceVector; //CrossProduct(distanceVector,boidI->up);
+		boidI->avoidanceVector -= CrossProduct(distanceVector,boidI->up); //distanceVector;
 	      count++;
 	    }
 	}
@@ -213,7 +212,7 @@ void Chaser::avoidance(Boid* boidI, int index)
 // Inside chasers view angle, xz-plane
 bool Chaser::insideView(Boid chaser, Boid evader)
 {
-  float viewAngle = 4.0; // ([-20,20])
+  float viewAngle = 3.0; // 1.05 = 60 degrees //0.52 radians = 0.52*(180/pi) = 30 degrees //([-20,20])
   vec3 directionToEvader = evader.position - chaser.position;
   if(Norm(directionToEvader) < awarenessRadius)
     {
@@ -222,7 +221,7 @@ bool Chaser::insideView(Boid chaser, Boid evader)
       if(abs(angle) < viewAngle)
 	{
 	  return true;
-	  //cout << "In Chaser class: Evader inside view!!!" << endl;
+	  cout << "In Chaser class: Evader inside view!!!" << endl;
 	}
     }
   return false;
@@ -243,6 +242,7 @@ void Chaser::attack(Boid* boidI, vector<Boid> evaders)
     {
       if(insideView(*boidI,evaders.at(i)))
 	{
+	  //cout << "Inside view!" << endl;
 	  if(Norm(evaders.at(i).position - boidI->position) < minD)
 	    {
 	      minD = Norm(evaders.at(i).position - boidI->position);

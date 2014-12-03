@@ -23,8 +23,6 @@
 class Camera
 {
  private:
-  vec3 position;
-  vec3 lookAtPoint;
   vec3 upVector;
 
   GLfloat velocity;
@@ -42,6 +40,13 @@ class Camera
 
   static const int SCREEN_WIDTH = 1024;
   static const int SCREEN_HEIGHT = 860;
+
+  vec3 position;
+  vec3 lookAtPoint;
+
+  int timer;
+  bool followFlock;
+  int flockIndex;
 
   mat4 cameraMatrix;
   mat4 projectionMatrix;

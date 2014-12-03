@@ -16,6 +16,7 @@
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 
+#include "Camera.h"
 #include "Evader.h"
 #include "Chaser.h"
 
@@ -23,12 +24,13 @@ class ManageChasersAndEvaders
 {
  private:
   //~ManageChasersAndEvaders();
-  bool mergeFlocks();
+  void mergeFlocks(Camera *cam);
   void splitFlock(Evader *flock);
   int nearestFlock(Boid chaser);
   void loadEvaderModels();
   void animate(GLfloat time);
   void animateAndDraw(GLfloat time, mat4 cameraMatrix);
+  void sortFlockIndex(Camera *cam);
   
   GLuint* shader;
   Model *evaderModel;
@@ -48,7 +50,7 @@ class ManageChasersAndEvaders
   //vector<Chaser*> predators;
 
   ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser);
-  void update(GLfloat time);  
+  void update(GLfloat time, Camera *cam);  
   void draw(GLfloat time, mat4 cameraMatrix);
 };
 

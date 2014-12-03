@@ -21,6 +21,9 @@ class Evader
   GLuint texture;
 
   vec3 follow, avoidChaserVector;
+
+  GLfloat prevTime;
+  vec3 tempSpeed;
   
   //vec3 maxSpeed;
   float maxDistance, minDistance, maxSpeed, awarenessRadius;
@@ -38,16 +41,17 @@ class Evader
   void followLeader(Boid* boidI);
   void boundPositionBoid(Boid *boid);
   void checkMaxSpeed(Boid *boid);
-  void updateLeader();
+  void updateLeader(GLfloat time);
   void makeFlockOf(int inhabitants, vec3 position);
-bool insideView(Boid boidI, Boid boidJ, float radius);
+  bool insideView(Boid boidI, Boid boidJ, float radius);
 
  public:
   Model* model;
   Boid leader;
+  int flockIndex;
   std::vector<Boid> evaderVector; // Change to pointers?
 
-  Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids);
+  Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids, int index);
   void draw(mat4 cameraMatrix);
   //void animate(GLfloat time);
   void update(GLfloat time, vector<Boid> chaserVector);
