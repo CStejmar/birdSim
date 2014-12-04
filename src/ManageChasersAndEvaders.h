@@ -25,7 +25,7 @@ class ManageChasersAndEvaders
  private:
   //~ManageChasersAndEvaders();
   void mergeFlocks(Camera *cam);
-  void splitFlock(Evader *flock);
+  void splitFlock(Evader *flock, Camera cam);
   int nearestFlock(Boid chaser);
   void loadEvaderModels();
   void animate(GLfloat time);
@@ -42,6 +42,9 @@ class ManageChasersAndEvaders
   GLfloat prevTime;
   uint modelIndex;
 
+  bool birdView;
+  vec3 camSpeed;
+
   //FILE *fp;
 
  public:
@@ -49,7 +52,7 @@ class ManageChasersAndEvaders
   vector<Evader*> flocks;
   //vector<Chaser*> predators;
 
-  ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser);
+  ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser, Camera cam);
   void update(GLfloat time, Camera *cam);  
   void draw(GLfloat time, mat4 cameraMatrix);
 };

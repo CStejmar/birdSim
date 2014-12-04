@@ -5,6 +5,7 @@
 #include "../common/loadobj.h"
 
 #include "Boid.h"
+//#include "Camera.h"
 
 #include <cmath>
 #include <iostream>
@@ -44,6 +45,7 @@ class Evader
   void updateLeader(GLfloat time);
   void makeFlockOf(int inhabitants, vec3 position);
   bool insideView(Boid boidI, Boid boidJ, float radius);
+  void updateBoundingPositions(vec3 cameraPosition);
 
  public:
   Model* model;
@@ -51,10 +53,10 @@ class Evader
   int flockIndex;
   std::vector<Boid> evaderVector; // Change to pointers?
 
-  Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids, int index);
+  Evader(GLuint *phongShader, Model *evaderModel, GLuint evaderTexture, vec3 pos, int numOfBoids, int index, vec3 cameraPosition);
   void draw(mat4 cameraMatrix);
   //void animate(GLfloat time);
-  void update(GLfloat time, vector<Boid> chaserVector);
+  void update(GLfloat time, vector<Boid> chaserVector, vec3 cameraPosition);
   
 };
 

@@ -17,7 +17,7 @@ void World::init(){
   camera = new Camera(vec3(24,20,24), 3, 7);
   skybox = new Skybox(&skyboxShader, camera->projectionMatrix, "../textures/skybox/skybox2/sky%d.tga");
 
-  birds = new ManageChasersAndEvaders(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", "../objects/eagle.obj", "../textures/eagleBrown.tga");
+  birds = new ManageChasersAndEvaders(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", "../objects/eagle.obj", "../textures/eagleBrown.tga", *camera);
   //evaders = new Evader(&phongObjShader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 150);
   //chasers = new Chaser(&phongObjShader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
 

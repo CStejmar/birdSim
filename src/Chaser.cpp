@@ -1,7 +1,7 @@
 
 #include "Chaser.h"
 
-Chaser::Chaser(GLuint *phongShader, Model *chaserModel, GLuint chaserTexture, vec3 pos, int numOfBoids)
+Chaser::Chaser(GLuint *phongShader, Model *chaserModel, GLuint chaserTexture, vec3 pos, int numOfBoids, vec3 cameraPosition)
 {
   shader = phongShader;
 
@@ -21,12 +21,12 @@ Chaser::Chaser(GLuint *phongShader, Model *chaserModel, GLuint chaserTexture, ve
   highInterval = 0.5;
 
   // Bounding the positions inside this cube. Should maybe center around camera position instead.
-  xMin = 0.0;
-  xMax = 512.0;
-  yMin = 20.0;
-  yMax = 300.0;
-  zMin = 0.0;
-  zMax = 512.0;
+  xMin = cameraPosition.x - 256.0;
+  xMax = cameraPosition.x + 256.0;
+  yMin = 30.0; // should be taken from calcHeight
+  yMax = 300.0; // Should be a fixed value because otherwise the followCam will make it possible to fly up for infinity.
+  zMin = cameraPosition.z - 256.0;
+  zMax = cameraPosition.z + 256.0;
   
   makeIndividuals(numOfBoids, pos);
 }
@@ -108,12 +108,24 @@ if(Norm(boid->speed) > Norm(mSpeed))
     }
 }
 
-void Chaser::update(GLfloat time, int chaserIndex, vector<Boid> evaderVector)
+void Chaser::updateBoundingPositions(vec3 cameraPosition)
+{
+  // Bounding the positions inside this cube.
+  xMin = cameraPosition.x - 256.0;
+  xMax = cameraPosition.x + 256.0;
+  //yMin = 30.0; // should be taken from calcHeight
+  //yMax = 300.0; // Should be a fixed value because otherwise the followCam will make it possible to fly up for infinity.
+  zMin = cameraPosition.z - 256.0;
+  zMax = cameraPosition.z + 256.0;
+}
+
+void Chaser::update(GLfloat time, int chaserIndex, vector<Boid> evaderVector, vec3 cameraPosition)
 {
   /*cout << "Position for chaser: ("
        << chaserVector.at(0).position.x << ","
        << chaserVector.at(0).position.y << ","
        << chaserVector.at(0).position.z << ")" << endl;*/
+  updateBoundingPositions(cameraPosition);
 
   searchPrey(chaserIndex, evaderVector);
 }

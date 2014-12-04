@@ -9,7 +9,7 @@
 
 // }
 
-ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser)
+ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *modelPathEvader, char *imagePathEvader, char *modelPathChaser, char *imagePathChaser, Camera cam)
 {
   shader = phongShader;
 
@@ -31,18 +31,20 @@ ManageChasersAndEvaders::ManageChasersAndEvaders(GLuint* phongShader, char *mode
 
   loadEvaderModels();
 
-  Evader* evaders = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 150, 0);
-  Evader* evaders2 = new Evader(shader, evaderModel, evaderTexture, vec3(25,25,25), 20, 1);
+  Evader* evaders = new Evader(shader, evaderModel, evaderTexture, cam.position + vec3(25,25,25), 150, 0, cam.position);
+  Evader* evaders2 = new Evader(shader, evaderModel, evaderTexture, cam.position + vec3(30,30,50), 20, 1, cam.position);
   //Evader* evaders = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 150);
   //Evader* evaders2 = new Evader(shader, "../objects/crowMedium.obj", "../textures/crow.tga", vec3(25,25,25), 20);
   flocks.push_back(evaders);
   flocks.push_back(evaders2);
 
-  chasers = new Chaser(shader, chaserModel, chaserTexture, vec3(300,100,300), 3);
+  chasers = new Chaser(shader, chaserModel, chaserTexture, cam.position + vec3(300,100,300), 3, cam.position);
   //chasers = new Chaser(shader, "../objects/eagle.obj", "../textures/eagleBrown.tga", vec3(300,100,300), 3);
 
   prevTime = 0.0;
   modelIndex = 0;
+
+  birdView = false;
 
   // fp = NULL;
   // fp=fopen("country_sounds.wav", "rb");
@@ -104,7 +106,7 @@ void ManageChasersAndEvaders::mergeFlocks(Camera *cam)
   //return false;
 }
 
-void ManageChasersAndEvaders::splitFlock(Evader *flock)
+void ManageChasersAndEvaders::splitFlock(Evader *flock, Camera cam)
 {
   float splitDistance = 50.0;
   float minD = 1000.0; // Initial high value
@@ -137,7 +139,7 @@ void ManageChasersAndEvaders::splitFlock(Evader *flock)
     {
       vec3 clusterPos1 = flock->evaderVector.at(minIndex).position;
       vec3 clusterPos2 = flock->evaderVector.at(maxIndex).position;
-      Evader* evader = new Evader(shader, evaderModel, evaderTexture, clusterPos2, 0, (int)flocks.size());
+      Evader* evader = new Evader(shader, evaderModel, evaderTexture, clusterPos2, 0, (int)flocks.size(), cam.position);
       
       for(uint i = 0; i < flock->evaderVector.size(); i++)
 	{
@@ -206,8 +208,8 @@ for(int i = 0; i < numberOfFlocks; i++)
   
   for(int i = 0; i < numberOfFlocks; i++)
     {
-      flocks.at(i)->update(time,chasers->chaserVector);
-      splitFlock(flocks.at(i));
+      flocks.at(i)->update(time,chasers->chaserVector,cam->position);
+      splitFlock(flocks.at(i), *cam);
       //cout << "Size of flock i: " << flocks.at(i)->evaderVector.size() << "\n";
     }
 
@@ -216,7 +218,7 @@ for(int i = 0; i < numberOfFlocks; i++)
     {
       int indexNearest = nearestFlock(chasers->chaserVector.at(i));
       if(indexNearest != -1)
-	chasers->update(time,i,flocks.at(indexNearest)->evaderVector);
+	chasers->update(time,i,flocks.at(indexNearest)->evaderVector,cam->position);
       else
 	cout << "No flock is near chaser " << i << endl;
     }
@@ -235,12 +237,21 @@ for(int i = 0; i < numberOfFlocks; i++)
 	cam->flockIndex = 0;
       
       cam->lookAtPoint = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition; //leader.position;
-      cam->position = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition - Normalize(flocks.at(cam->flockIndex)->evaderVector.at(0).speed)*35; //flocks.at(0)->leader.position - Normalize(flocks.at(0)->leader.speed)*40.0;
+      if(birdView)
+	cam->position = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition - Normalize(flocks.at(cam->flockIndex)->evaderVector.at(0).speed)*3;
+      else
+	{
+	  cam->position = flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition - Normalize(flocks.at(cam->flockIndex)->evaderVector.at(0).speed)*35;
+	  cam->position.y += 15.0; // So we se the birds from above.
+	}
+
+      // camSpeed += flocks.at(cam->flockIndex)->evaderVector.at(0).averagePosition - Normalize(flocks.at(cam->flockIndex)->evaderVector.at(0).speed)*30;
+      // if(Norm(camSpeed) > Norm(vec3(1.5,1.5,1.5)))
+      // 	camSpeed /= 2.0;
+      // cam->position = camSpeed*0.7;
 
       //cam->lookAtPoint = chasers->chaserVector.at(0).position;
       //cam->position = chasers->chaserVector.at(0).position - Normalize(chasers->chaserVector.at(0).speed)*20;
-
-      cam->position.y += 15.0; // So we se the birds from above.
     }
 
   // // Test
